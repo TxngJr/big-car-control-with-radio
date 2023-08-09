@@ -48,7 +48,7 @@ void loop() {
     Receiver.readBytes(dataPacket, 4);
     if (dataPacket[0] == token) {
       byte statusControl = dataPacket[1];
-      byte buttonUDLR = dataPacket[2];
+      byte statusButtonUDLR = dataPacket[2];
       bool switchPick = dataPacket[3];
 
       moveControl(statusControl);
@@ -56,8 +56,8 @@ void loop() {
 
       Serial.print("statusControl: ");
       Serial.println(statusControl);
-      Serial.print("buttonUDLR: ");
-      Serial.println(buttonUDLR);
+      Serial.print("statusButtonUDLR: ");
+      Serial.println(statusButtonUDLR);
       Serial.print("switchPick: ");
       Serial.println(switchPick);
     }

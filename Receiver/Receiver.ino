@@ -2,21 +2,21 @@ const char token = 'K';
 
 #define Receiver Serial1
 
-#define FRONT_LEFT_FORWARD_PIN 1
-#define FRONT_LEFT_BACKWARD_PIN 2
-#define FRONT_LEFT_STOP_PIN 3
+#define FRONT_LEFT_FORWARD_PIN 26
+#define FRONT_LEFT_BACKWARD_PIN 27
+#define FRONT_LEFT_STOP_PIN 28
 
-#define FRONT_RIGHT_FORWARD_PIN 4
-#define FRONT_RIGHT_BACKWARD_PIN 5
-#define FRONT_RIGHT_STOP_PIN 6
+#define FRONT_RIGHT_FORWARD_PIN 18
+#define FRONT_RIGHT_BACKWARD_PIN 17
+#define FRONT_RIGHT_STOP_PIN 16
 
-#define BACK_LEFT_FORWARD_PIN 7
-#define BACK_LEFT_BACKWARD_PIN 8
-#define BACK_LEFT_STOP_PIN 9
+#define BACK_LEFT_FORWARD_PIN 6
+#define BACK_LEFT_BACKWARD_PIN 3
+#define BACK_LEFT_STOP_PIN 2
 
-#define BACK_RIGHT_FORWARD_PIN 10
-#define BACK_RIGHT_BACKWARD_PIN 11
-#define BACK_RIGHT_STOP_PIN 12
+#define BACK_RIGHT_FORWARD_PIN 7
+#define BACK_RIGHT_BACKWARD_PIN 8
+#define BACK_RIGHT_STOP_PIN 9
 
 
 void setup() {
@@ -52,7 +52,7 @@ void loop() {
       bool switchPick = dataPacket[3];
 
       moveControl(statusControl);
-      buttonControl(buttonUDLR);
+      buttonControl(statusButtonUDLR);
 
       Serial.print("statusControl: ");
       Serial.println(statusControl);
@@ -62,6 +62,8 @@ void loop() {
       Serial.println(switchPick);
     }
   } else {
+      Serial.print("else");
+
     moveControl(0);
   }
 }

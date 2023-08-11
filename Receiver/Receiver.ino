@@ -1,21 +1,20 @@
+UART Receiver(4, 5, 0, 0);
+// const byte token = 75;
 
-#define Receiver Serial1
-const char token = 'K';
-
-#define FRONT_LEFT_FORWARD_PIN 27
-#define FRONT_LEFT_BACKWARD_PIN 26
+#define FRONT_LEFT_FORWARD_PIN 26
+#define FRONT_LEFT_BACKWARD_PIN 27
 #define FRONT_LEFT_STOP_PIN 28
 
-#define FRONT_RIGHT_FORWARD_PIN 18
-#define FRONT_RIGHT_BACKWARD_PIN 17
+#define FRONT_RIGHT_FORWARD_PIN 17
+#define FRONT_RIGHT_BACKWARD_PIN 18
 #define FRONT_RIGHT_STOP_PIN 16
 
-#define BACK_LEFT_FORWARD_PIN 1
-#define BACK_LEFT_BACKWARD_PIN 2
+#define BACK_LEFT_FORWARD_PIN 2
+#define BACK_LEFT_BACKWARD_PIN 1
 #define BACK_LEFT_STOP_PIN 0
 
-#define BACK_RIGHT_FORWARD_PIN 9
-#define BACK_RIGHT_BACKWARD_PIN 10
+#define BACK_RIGHT_FORWARD_PIN 10
+#define BACK_RIGHT_BACKWARD_PIN 9
 #define BACK_RIGHT_STOP_PIN 11
 
 
@@ -43,35 +42,27 @@ void setup() {
 }
 
 void loop() {
+
   if (Receiver.available()) {
-    char data = Receiver.readBytes();
-    Serial.print("Received: ");
-    Serial.println(data);
+    String receivedData = Receiver.readStringUntil('&');
+    Serial.println("Received: " + receivedData);
+
+
+    String token = receivedData.substring(0, 4);         // Extracts characters from index 0 to 3 (substring good)
+    String moveStatus = receivedData.substring(4, 5);    // Extracts character at index 4 (0)
+    String buttonStatus = receivedData.substring(5, 6);  // Extracts character at index 5 (0)
+    String switchStatus = receivedData.substring(6, 7);  // Extracts character at index 6 (1)
+    Serial.println("token : " + token);
+    Serial.println("move:" + moveStatus);
+    Serial.println("button:" + buttonStatus);
+    Serial.println("switch:" + switchStatus);
+    moveControl(moveStatus.toInt());
+    buttonControl(buttonStatus.toInt());
+  } else {
+    Serial.println("else");
+
+    // moveControl(0);
   }
-
-  // if (Receiver.available()) {
-  //   byte dataPacket[4];
-  //   Receiver.readBytes(dataPacket, 4);
-  //   // if (dataPacket[0] == token) {
-  //   byte statusControl = dataPacket[1];
-  //   byte statusButtonUDLR = dataPacket[2];
-  //   bool switchPick = dataPacket[3];
-
-  //   // moveControl(statusControl);
-  //   // buttonControl(statusButtonUDLR);
-
-  //   Serial.print("statusControl: ");
-  //   Serial.println(statusControl);
-  //   Serial.print("statusButtonUDLR: ");
-  //   Serial.println(statusButtonUDLR);
-  //   Serial.print("switchPick: ");
-  //   Serial.println(switchPick);
-  //   // }
-  // } else {
-  //   Serial.println("else");
-
-  //   // moveControl(0);
-  // }
 }
 
 void moveControl(int value) {

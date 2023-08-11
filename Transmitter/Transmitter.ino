@@ -1,5 +1,7 @@
 #include <SoftwareSerial.h>
 
+#define TOKEN "nonisgay";
+
 #define TRANSMITTER_TX_PIN 10
 #define TRANSMITTER_RX_PIN 11
 
@@ -14,8 +16,6 @@
 #define SWITCH_PIN 5
 
 #define LED_ON_PIN 4
-
-const String token = "good";
 
 SoftwareSerial Transmitter(TRANSMITTER_TX_PIN, TRANSMITTER_RX_PIN);
 
@@ -84,7 +84,7 @@ void setup() {
 }
 
 void loop() {
-  String dataTransmitter = token + moveControl() + buttonUDLR() + digitalRead(SWITCH_PIN) + "&";
+  String dataTransmitter = TOKEN + moveControl() + buttonUDLR() + digitalRead(SWITCH_PIN) + "&";
   Serial.println(dataTransmitter);
   Transmitter.write(dataTransmitter.c_str());
 }

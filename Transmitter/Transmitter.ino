@@ -1,9 +1,7 @@
-#include <SoftwareSerial.h>
+#include <SPI.h>
+#include <nRF24L01p.h>
 
-#define TOKEN "nonisgay";
-
-#define TRANSMITTER_TX_PIN 10
-#define TRANSMITTER_RX_PIN 11
+nRF24L01p transmitter(7, 8);  //CSN,CE
 
 #define JOYSTICK_X_AXIS_PIN A1
 #define JOYSTICK_Y_AXIS_PIN A0
@@ -17,7 +15,6 @@
 
 #define LED_ON_PIN 4
 
-SoftwareSerial Transmitter(TRANSMITTER_TX_PIN, TRANSMITTER_RX_PIN);
 
 byte moveControl() {
   byte status = 0;
@@ -66,8 +63,15 @@ byte buttonUDLR() {
 }
 
 void setup() {
+  delay(150);
   Serial.begin(9600);
   Transmitter.begin(9600);
+
+  SPI.begin();
+  SPI.setBitOrder(MSBFIRST);
+  transmitter.channel(90);         // ตั้งช่องความถี่ให้ตรงกัน
+  transmitter.TXaddress("gaynn");  // ตั้งชื่อตำแหน่งให้ตรงกัน ชื่อตั้งได้สูงสุด 5 ตัวอักษร
+  transmitter.init();
 
   pinMode(JOYSTICK_X_AXIS_PIN, INPUT);
   pinMode(JOYSTICK_Y_AXIS_PIN, INPUT);
@@ -84,7 +88,8 @@ void setup() {
 }
 
 void loop() {
-  String dataTransmitter = TOKEN + moveControl() + buttonUDLR() + digitalRead(SWITCH_PIN) + "&";
-  Serial.println(dataTransmitter);
-  Transmitter.write(dataTransmitter.c_str());
+  static int count = 0;
+  String dataTransmitter = moveControl() + buttonUDLR() + digitalRead(SWITCH_PIN) + "&";
+  transmitter.txPL(dataTransmitter);  // ค่าที่ต้องการส่ง
+  transmitter.send(FAST);             // สั่งให้ส่งออกไป
 }

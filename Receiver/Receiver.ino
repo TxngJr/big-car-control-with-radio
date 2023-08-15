@@ -1,6 +1,24 @@
-UART Receiver(4, 5, 0, 0);
+#include <SPI.h>
+#include <nRF24L01p.h>
+nRF24L01p receiver(7, 8);  //CSN,CE
 
-#define TOKEN "nonisgay"
+
+String message;
+void loop() {
+  buttonState = digitalRead(buttonPin);
+  if (buttonState == HIGH) {
+    digitalWrite(13, HIGH);
+    receiver.txPL("1");   // ค่าที่ต้องการส่ง
+    receiver.send(FAST);  // สั่งให้ส่งออกไป
+    Serial.println("ส่ง");
+
+  } else {
+    receiver.txPL("2");   // ค่าที่ต้องการส่ง
+    receiver.send(FAST);  // สั่งให้ส่งออกไป
+    digitalWrite(13, LOW);
+    Serial.println("ไม่ส่ง");
+  }
+}
 
 #define FRONT_LEFT_FORWARD_PIN 26
 #define FRONT_LEFT_BACKWARD_PIN 27
@@ -18,14 +36,21 @@ UART Receiver(4, 5, 0, 0);
 #define BACK_RIGHT_BACKWARD_PIN 9
 #define BACK_RIGHT_STOP_PIN 11
 
-#define DIR_UP_DOWN_PIN 22
-#define CONTROL_SPEED_UP_DOWN_PIN 21
+#define DIR_UP_DOWN_PIN 3
+#define CONTROL_SPEED_UP_DOWN_PIN 6
 
-#define RELAY_PIN 8
+#define RELAY_PIN 7
+
+#define IR_PIN 22
 
 void setup() {
+  delay(150);
   Serial.begin(9600);
-  Receiver.begin(9600);
+  SPI.begin();
+  SPI.setBitOrder(MSBFIRST);
+  receiver.channel(90);         // ตั้งช่องความถี่ให้ตรงกัน
+  receiver.TXaddress("gaynn");  // ตั้งชื่อตำแหน่งให้ตรงกัน ชื่อตั้งได้สูงสุด 5 ตัวอักษร
+  receiver.init();
 
   pinMode(FRONT_LEFT_FORWARD_PIN, OUTPUT);
   pinMode(FRONT_LEFT_BACKWARD_PIN, OUTPUT);
@@ -48,43 +73,37 @@ void setup() {
 
   pinMode(RELAY_PIN, OUTPUT);
 
+  pinMode(IR_PIN, INPUT);
+
   joystickControl(0);
   buttonControl(0);
   switchControl(0);
 }
-
+String receivedData;
 void loop() {
-
-  if (Receiver.available()) {
-    String receivedData = Receiver.readStringUntil('&');
+  if (receiver.available()) {
+    receiver.read();              // สั่งให้เริ่มอ่าน
+    receiver.rxPL(receivedData);  // สั่งใหอ่านเก็บไว้ที่ตัวแปร
+    Serial.println(receivedData);
+    // String callbackData = receivedData + "&";
+    // Receiver.write(callbackData.c_str());
     // Serial.println("Received: " + receivedData);
+    String moveStatus = receivedData.substring(0, 1);
+    String buttonStatus = receivedData.substring(1, 2);
+    String switchStatus = receivedData.substring(2, 3);
 
-    int token = receivedData.indexOf(TOKEN);
-    if (token != -1) {
-      String moveStatus = receivedData.substring(token + 1, token + 2);
-      String buttonStatus = receivedData.substring(token + 2, token + 3);
-      String switchStatus = receivedData.substring(token + 3, token + 4);
-      joystickControl(moveStatus.toInt());
-      buttonControl(buttonStatus.toInt());
-      switchControl(switchStatus.toInt());
-    }
-    // String token = receivedData.substring(0, 4);
-    // if (token == "good") {
-    //   String moveStatus = receivedData.substring(4, 5);
-    //   String buttonStatus = receivedData.substring(5, 6);
-    //   String switchStatus = receivedData.substring(6, 7);
-    //   // Serial.println("token : " + token);
-    //   // Serial.println("move:" + moveStatus);
-    //   // Serial.println("button:" + buttonStatus);
-    //   // Serial.println("switch:" + switchStatus);
-    //   joystickControl(moveStatus.toInt());
-    //   buttonControl(buttonStatus.toInt());
-    //   switchControl(switchStatus.toInt());
+    joystickControl(moveStatus.toInt());
+    buttonControl(buttonStatus.toInt());
+    switchControl(switchStatus.toInt());
+
+    // Serial.println("move:" + moveStatus);
+    // Serial.println("button:" + buttonStatus);
+    // Serial.println("switch:" + switchStatus);
+    // else {
+    //   joystickControl(0);
+    //   buttonControl(0);
+    //   switchControl(0);
     // }
-  } else {
-    joystickControl(0);
-    buttonControl(0);
-    switchControl(0);
   }
 }
 
@@ -248,12 +267,16 @@ void joystickControl(int value) {
 void buttonControl(int value) {
   if (value == 1) {
     //UP RAIL
-    digitalWrite(DIR_UP_DOWN_PIN, HIGH);
+    digitalWrite(DIR_UP_DOWN_PIN, LOW);
     digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, HIGH);
   } else if (value == 2) {
     //DOWN RAIL
-    digitalWrite(DIR_UP_DOWN_PIN, LOW);
-    digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, HIGH);
+    if (!digitalRead(IR_PIN)) {
+      digitalWrite(DIR_UP_DOWN_PIN, HIGH);
+      digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, HIGH);
+    } else {
+      digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, LOW);
+    }
   } else if (value == 3) {
     //rotate left
     digitalWrite(FRONT_LEFT_FORWARD_PIN, HIGH);

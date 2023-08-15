@@ -1,7 +1,9 @@
 #include <SPI.h>
-#include <nRF24L01p.h>
+#include <nRF24L01.h>
+#include <RF24.h>
 
-nRF24L01p transmitter(7, 8);  //CSN,CE
+#define RADIO_CE_PIN 7
+#define RADIO_CSN_PIN 8
 
 #define JOYSTICK_X_AXIS_PIN A1
 #define JOYSTICK_Y_AXIS_PIN A0
@@ -15,6 +17,17 @@ nRF24L01p transmitter(7, 8);  //CSN,CE
 
 #define LED_ON_PIN 4
 
+struct Data_Package {
+  byte moveStatus;
+  byte buttonStatus;
+  bool switchStatus;
+};
+
+RF24 Receiver(RADIO_CE_PIN, RADIO_CSN_PIN);
+
+Data_Package data;
+
+const byte address[6] = "sobad";
 
 byte moveControl() {
   byte status = 0;
@@ -63,15 +76,12 @@ byte buttonUDLR() {
 }
 
 void setup() {
-  delay(150);
   Serial.begin(9600);
-  Transmitter.begin(9600);
 
-  SPI.begin();
-  SPI.setBitOrder(MSBFIRST);
-  transmitter.channel(90);         // ตั้งช่องความถี่ให้ตรงกัน
-  transmitter.TXaddress("gaynn");  // ตั้งชื่อตำแหน่งให้ตรงกัน ชื่อตั้งได้สูงสุด 5 ตัวอักษร
-  transmitter.init();
+  Transmitter.begin();
+  Transmitter.openWritingPipe(address);
+  Transmitter.setPALevel(RF24_PA_MIN);
+  Transmitter.stopListening();
 
   pinMode(JOYSTICK_X_AXIS_PIN, INPUT);
   pinMode(JOYSTICK_Y_AXIS_PIN, INPUT);
@@ -88,8 +98,20 @@ void setup() {
 }
 
 void loop() {
-  static int count = 0;
-  String dataTransmitter = moveControl() + buttonUDLR() + digitalRead(SWITCH_PIN) + "&";
-  transmitter.txPL(dataTransmitter);  // ค่าที่ต้องการส่ง
-  transmitter.send(FAST);             // สั่งให้ส่งออกไป
+  // static byte prvMoveStatus;
+  // static byte prvButtonStatus;
+  // static bool prvSwitchStatus;
+  data.moveStatus = moveControl();
+  data.buttonStatus = buttonUDLR();
+  data.switchStatus = digitalRead(SWITCH_PIN);
+  // Serial.println(text);
+  // if (data.moveStatus != prvMoveStatus || data.buttonStatus != prvButtonStatus || data.switchStatus != prvSwitchStatus) {
+  // Serial.println("move:" + data.moveStatus);
+  // Serial.println("button:" + data.buttonStatus);
+  // Serial.println("switch:" + data.switchStatus);
+  Transmitter.write(&data, sizeof(Data_Package));
+  //   prvMoveStatus = data.moveStatus;
+  //   prvButtonStatus = data.buttonStatus;
+  //   prvSwitchStatus = data.switchStatus;
+  // }
 }

@@ -1,9 +1,7 @@
 #include <SPI.h>
-#include <nRF24L01.h>
-#include <RF24.h>
+#include <nRF24L01p.h>
+nRF24L01p receiver(7, 8);  //CSN,CE
 
-#define RADIO_CE_PIN 7
-#define RADIO_CSN_PIN 8
 
 #define FRONT_LEFT_FORWARD_PIN 26
 #define FRONT_LEFT_BACKWARD_PIN 27
@@ -24,29 +22,20 @@
 #define DIR_UP_DOWN_PIN 3
 #define CONTROL_SPEED_UP_DOWN_PIN 6
 
-#define RELAY_PIN 7
+#define RELAY_1_PIN 40
+#define RELAY_2_PIN 40
 
 #define IR_PIN 22
 
-struct Data_Package {
-  byte moveStatus;
-  byte buttonStatus;
-  bool switchStatus;
-};
-
-RF24 Receiver(RADIO_CE_PIN, RADIO_CSN_PIN);
-
-Data_Package data;
-
-const byte address[6] = "sobad";
-
 void setup() {
-  Serial.begin(9600);
+  delay(150);
+  Serial.begin(115200);
+  SPI.begin();
+  SPI.setBitOrder(MSBFIRST);
+  receiver.channel(90);         // ตั้งช่องความถี่ให้ตรงกัน
+  receiver.RXaddress("sosad");  // ตั้งชื่อตำแห่นงให้ตรงกัน ชื่อตั้งได้สูงสุด 5 ตัวอักษร
+  receiver.init();
 
-  Receiver.begin();
-  Receiver.openReadingPipe(0, address);
-  Receiver.setPALevel(RF24_PA_MIN);
-  Receiver.startListening();
 
   pinMode(FRONT_LEFT_FORWARD_PIN, OUTPUT);
   pinMode(FRONT_LEFT_BACKWARD_PIN, OUTPUT);
@@ -77,17 +66,22 @@ void setup() {
 }
 
 void loop() {
-  if (Receiver.available()) {
-    Receiver.read(&data, sizeof(Data_Package));
+  static String receiverData = "000";
+  if (receiver.available()) {
+    receiverData = "";
+    receiver.read();
+    receiver.rxPL(receiverData);
+    Serial.println(receiverData);
   }
-
-  Serial.println("move:" + data.moveStatus);
-  Serial.println("button:" + data.buttonStatus);
-  Serial.println("switch:" + data.switchStatus);
-
-  joystickControl(data.moveStatus);
-  buttonControl(data.buttonStatus);
-  switchControl(data.switchStatus);
+  String moveStatus = receiverData.substring(0, 1);
+  String buttonStatus = receiverData.substring(1, 2);
+  String switchStatus = receiverData.substring(2, 3);
+  Serial.println(moveStatus);
+  Serial.println(buttonStatus);
+  Serial.println(switchStatus);
+  joystickControl(moveStatus.toInt());
+  buttonControl(buttonStatus.toInt());
+  switchControl(switchStatus.toInt());
 }
 
 void joystickControl(byte value) {

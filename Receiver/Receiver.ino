@@ -1,7 +1,7 @@
+//Receiver
 #include <SPI.h>
-#include <nRF24L01p.h>
-nRF24L01p receiver(7, 8);  //CSN,CE
-
+#include <nRF24L01.h>
+#include <RF24.h>
 
 #define FRONT_LEFT_FORWARD_PIN 26
 #define FRONT_LEFT_BACKWARD_PIN 27
@@ -27,61 +27,35 @@ nRF24L01p receiver(7, 8);  //CSN,CE
 
 #define IR_PIN 22
 
+RF24 Receiver(4, 5);  // CE, CSN
+
+const byte address[6] = "sogod";
+
+struct Data_Package {
+  byte joystickControlStatus = 0;
+  byte buttonsControlStatus = 0;
+  byte switchControlStatus = 0;
+};
+
+Data_Package data;
+
 void setup() {
-  delay(150);
-  Serial.begin(115200);
-  SPI.begin();
-  SPI.setBitOrder(MSBFIRST);
-  receiver.channel(90);         // ตั้งช่องความถี่ให้ตรงกัน
-  receiver.RXaddress("sosad");  // ตั้งชื่อตำแห่นงให้ตรงกัน ชื่อตั้งได้สูงสุด 5 ตัวอักษร
-  receiver.init();
-
-
-  pinMode(FRONT_LEFT_FORWARD_PIN, OUTPUT);
-  pinMode(FRONT_LEFT_BACKWARD_PIN, OUTPUT);
-  pinMode(FRONT_LEFT_STOP_PIN, OUTPUT);
-
-  pinMode(FRONT_RIGHT_FORWARD_PIN, OUTPUT);
-  pinMode(FRONT_RIGHT_BACKWARD_PIN, OUTPUT);
-  pinMode(FRONT_RIGHT_STOP_PIN, OUTPUT);
-
-  pinMode(BACK_LEFT_FORWARD_PIN, OUTPUT);
-  pinMode(BACK_LEFT_BACKWARD_PIN, OUTPUT);
-  pinMode(BACK_LEFT_STOP_PIN, OUTPUT);
-
-  pinMode(BACK_RIGHT_FORWARD_PIN, OUTPUT);
-  pinMode(BACK_RIGHT_BACKWARD_PIN, OUTPUT);
-  pinMode(BACK_RIGHT_STOP_PIN, OUTPUT);
-
-  pinMode(DIR_UP_DOWN_PIN, OUTPUT);
-  pinMode(CONTROL_SPEED_UP_DOWN_PIN, OUTPUT);
-
-  pinMode(RELAY_PIN, OUTPUT);
-
-  pinMode(IR_PIN, INPUT);
-
+  Receiver.begin();
+  Receiver.openReadingPipe(0, address);
+  Receiver.setPALevel(RF24_PA_MIN);
+  Receiver.startListening();
   joystickControl(0);
   buttonControl(0);
   switchControl(0);
 }
 
 void loop() {
-  static String receiverData = "000";
-  if (receiver.available()) {
-    receiverData = "";
-    receiver.read();
-    receiver.rxPL(receiverData);
-    Serial.println(receiverData);
+  if (Receiver.available()) {
+    Receiver.read(&data, sizeof(Data_Package));
   }
-  String moveStatus = receiverData.substring(0, 1);
-  String buttonStatus = receiverData.substring(1, 2);
-  String switchStatus = receiverData.substring(2, 3);
-  Serial.println(moveStatus);
-  Serial.println(buttonStatus);
-  Serial.println(switchStatus);
-  joystickControl(moveStatus.toInt());
-  buttonControl(buttonStatus.toInt());
-  switchControl(switchStatus.toInt());
+  joystickControl(data.joystickControlStatus);
+  buttonControl(data.buttonsControlStatus);
+  switchControl(data.switchControlStatus);
 }
 
 void joystickControl(byte value) {

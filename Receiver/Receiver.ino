@@ -3,31 +3,29 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-#define FRONT_LEFT_FORWARD_PIN 26
-#define FRONT_LEFT_BACKWARD_PIN 27
-#define FRONT_LEFT_STOP_PIN 28
+#define FRONT_LEFT_FORWARD_PIN 9
+#define FRONT_LEFT_BACKWARD_PIN 10
+#define FRONT_LEFT_STOP_PIN 11
 
-#define FRONT_RIGHT_FORWARD_PIN 17
-#define FRONT_RIGHT_BACKWARD_PIN 18
-#define FRONT_RIGHT_STOP_PIN 16
+#define FRONT_RIGHT_FORWARD_PIN 33
+#define FRONT_RIGHT_BACKWARD_PIN 31
+#define FRONT_RIGHT_STOP_PIN 35
 
-#define BACK_LEFT_FORWARD_PIN 2
-#define BACK_LEFT_BACKWARD_PIN 1
-#define BACK_LEFT_STOP_PIN 0
+#define BACK_LEFT_FORWARD_PIN 40
+#define BACK_LEFT_BACKWARD_PIN 42
+#define BACK_LEFT_STOP_PIN 44
 
-#define BACK_RIGHT_FORWARD_PIN 10
-#define BACK_RIGHT_BACKWARD_PIN 9
-#define BACK_RIGHT_STOP_PIN 11
+#define BACK_RIGHT_FORWARD_PIN 39
+#define BACK_RIGHT_BACKWARD_PIN 37
+#define BACK_RIGHT_STOP_PIN 41
 
-#define DIR_UP_DOWN_PIN 3
-#define CONTROL_SPEED_UP_DOWN_PIN 6
+#define RELAY_1_PIN 49
+#define RELAY_2_PIN 43
+#define RELAY_3_PIN 45
 
-#define RELAY_1_PIN 40
-#define RELAY_2_PIN 40
+#define IR_PIN 13
 
-#define IR_PIN 22
-
-RF24 Receiver(4, 5);  // CE, CSN
+RF24 Receiver(8, 7);  // CE, CSN
 
 const byte address[6] = "sogod";
 
@@ -44,6 +42,29 @@ void setup() {
   Receiver.openReadingPipe(0, address);
   Receiver.setPALevel(RF24_PA_MIN);
   Receiver.startListening();
+
+  pinMode(FRONT_LEFT_FORWARD_PIN, OUTPUT);
+  pinMode(FRONT_LEFT_BACKWARD_PIN, OUTPUT);
+  pinMode(FRONT_LEFT_STOP_PIN, OUTPUT);
+
+  pinMode(FRONT_RIGHT_FORWARD_PIN, OUTPUT);
+  pinMode(FRONT_RIGHT_BACKWARD_PIN, OUTPUT);
+  pinMode(FRONT_RIGHT_STOP_PIN, OUTPUT);
+
+  pinMode(BACK_LEFT_FORWARD_PIN, OUTPUT);
+  pinMode(BACK_LEFT_BACKWARD_PIN, OUTPUT);
+  pinMode(BACK_LEFT_STOP_PIN, OUTPUT);
+
+  pinMode(BACK_RIGHT_FORWARD_PIN, OUTPUT);
+  pinMode(BACK_RIGHT_BACKWARD_PIN, OUTPUT);
+  pinMode(BACK_RIGHT_STOP_PIN, OUTPUT);
+
+  pinMode(RELAY_1_PIN, OUTPUT);
+  pinMode(RELAY_2_PIN, OUTPUT);
+  pinMode(RELAY_3_PIN, OUTPUT);
+
+  pinMode(IR_PIN, INPUT);
+
   joystickControl(0);
   buttonControl(0);
   switchControl(0);
@@ -52,6 +73,9 @@ void setup() {
 void loop() {
   if (Receiver.available()) {
     Receiver.read(&data, sizeof(Data_Package));
+    // Serial.println(data.joystickControlStatus);
+    // Serial.println(data.buttonsControlStatus);
+    // Serial.println(data.switchControlStatus);
   }
   joystickControl(data.joystickControlStatus);
   buttonControl(data.buttonsControlStatus);
@@ -195,6 +219,40 @@ void joystickControl(byte value) {
     digitalWrite(BACK_RIGHT_FORWARD_PIN, LOW);
     digitalWrite(BACK_RIGHT_BACKWARD_PIN, HIGH);
     digitalWrite(BACK_RIGHT_STOP_PIN, HIGH);
+  } else if (value == 9) {
+    //rotate left
+    digitalWrite(FRONT_LEFT_FORWARD_PIN, HIGH);
+    digitalWrite(FRONT_LEFT_BACKWARD_PIN, LOW);
+    digitalWrite(FRONT_LEFT_STOP_PIN, HIGH);
+
+    digitalWrite(FRONT_RIGHT_FORWARD_PIN, LOW);
+    digitalWrite(FRONT_RIGHT_BACKWARD_PIN, HIGH);
+    digitalWrite(FRONT_RIGHT_STOP_PIN, HIGH);
+
+    digitalWrite(BACK_LEFT_FORWARD_PIN, HIGH);
+    digitalWrite(BACK_LEFT_BACKWARD_PIN, LOW);
+    digitalWrite(BACK_LEFT_STOP_PIN, HIGH);
+
+    digitalWrite(BACK_RIGHT_FORWARD_PIN, LOW);
+    digitalWrite(BACK_RIGHT_BACKWARD_PIN, HIGH);
+    digitalWrite(BACK_RIGHT_STOP_PIN, HIGH);
+  } else if (value == 10) {
+    //rotate right
+    digitalWrite(FRONT_LEFT_FORWARD_PIN, LOW);
+    digitalWrite(FRONT_LEFT_BACKWARD_PIN, HIGH);
+    digitalWrite(FRONT_LEFT_STOP_PIN, HIGH);
+
+    digitalWrite(FRONT_RIGHT_FORWARD_PIN, HIGH);
+    digitalWrite(FRONT_RIGHT_BACKWARD_PIN, LOW);
+    digitalWrite(FRONT_RIGHT_STOP_PIN, HIGH);
+
+    digitalWrite(BACK_LEFT_FORWARD_PIN, LOW);
+    digitalWrite(BACK_LEFT_BACKWARD_PIN, HIGH);
+    digitalWrite(BACK_LEFT_STOP_PIN, HIGH);
+
+    digitalWrite(BACK_RIGHT_FORWARD_PIN, HIGH);
+    digitalWrite(BACK_RIGHT_BACKWARD_PIN, LOW);
+    digitalWrite(BACK_RIGHT_STOP_PIN, HIGH);
   } else {
     //stop
     digitalWrite(FRONT_LEFT_FORWARD_PIN, HIGH);
@@ -218,59 +276,33 @@ void joystickControl(byte value) {
 void buttonControl(byte value) {
   if (value == 1) {
     //UP RAIL
-    digitalWrite(DIR_UP_DOWN_PIN, LOW);
-    digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, HIGH);
+    digitalWrite(RELAY_2_PIN, HIGH);
+    digitalWrite(RELAY_3_PIN, LOW);
   } else if (value == 2) {
     //DOWN RAIL
     if (!digitalRead(IR_PIN)) {
-      digitalWrite(DIR_UP_DOWN_PIN, HIGH);
-      digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, HIGH);
+      digitalWrite(RELAY_2_PIN, LOW);
+      digitalWrite(RELAY_3_PIN, HIGH);
     } else {
-      digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, LOW);
+      digitalWrite(RELAY_2_PIN, LOW);
+      digitalWrite(RELAY_3_PIN, LOW);
     }
   } else if (value == 3) {
     //rotate left
-    digitalWrite(FRONT_LEFT_FORWARD_PIN, HIGH);
-    digitalWrite(FRONT_LEFT_BACKWARD_PIN, LOW);
-    digitalWrite(FRONT_LEFT_STOP_PIN, HIGH);
-
-    digitalWrite(FRONT_RIGHT_FORWARD_PIN, LOW);
-    digitalWrite(FRONT_RIGHT_BACKWARD_PIN, HIGH);
-    digitalWrite(FRONT_RIGHT_STOP_PIN, HIGH);
-
-    digitalWrite(BACK_LEFT_FORWARD_PIN, HIGH);
-    digitalWrite(BACK_LEFT_BACKWARD_PIN, LOW);
-    digitalWrite(BACK_LEFT_STOP_PIN, HIGH);
-
-    digitalWrite(BACK_RIGHT_FORWARD_PIN, LOW);
-    digitalWrite(BACK_RIGHT_BACKWARD_PIN, HIGH);
-    digitalWrite(BACK_RIGHT_STOP_PIN, HIGH);
+    joystickControl(9);
   } else if (value == 4) {
     //rotate right
-    digitalWrite(FRONT_LEFT_FORWARD_PIN, LOW);
-    digitalWrite(FRONT_LEFT_BACKWARD_PIN, HIGH);
-    digitalWrite(FRONT_LEFT_STOP_PIN, HIGH);
-
-    digitalWrite(FRONT_RIGHT_FORWARD_PIN, HIGH);
-    digitalWrite(FRONT_RIGHT_BACKWARD_PIN, LOW);
-    digitalWrite(FRONT_RIGHT_STOP_PIN, HIGH);
-
-    digitalWrite(BACK_LEFT_FORWARD_PIN, LOW);
-    digitalWrite(BACK_LEFT_BACKWARD_PIN, HIGH);
-    digitalWrite(BACK_LEFT_STOP_PIN, HIGH);
-
-    digitalWrite(BACK_RIGHT_FORWARD_PIN, HIGH);
-    digitalWrite(BACK_RIGHT_BACKWARD_PIN, LOW);
-    digitalWrite(BACK_RIGHT_STOP_PIN, HIGH);
+    joystickControl(10);
   } else {
-    digitalWrite(CONTROL_SPEED_UP_DOWN_PIN, LOW);
+    digitalWrite(RELAY_2_PIN, LOW);
+    digitalWrite(RELAY_3_PIN, LOW);
   }
 }
 
-void switchControl(bool value) {
+void switchControl(byte value) {
   if (value == 1) {
-    digitalWrite(RELAY_PIN, HIGH);
+    digitalWrite(RELAY_1_PIN, HIGH);
   } else {
-    digitalWrite(RELAY_PIN, LOW);
+    digitalWrite(RELAY_1_PIN, LOW);
   }
 }

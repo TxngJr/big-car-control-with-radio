@@ -13,19 +13,20 @@
 
 #define SWITCH_PIN 6
 
-RF24 Transmitter(4, 5);  // CE, CSN
+RF24 Transmitter(8, 7);  // CE, CSN
 
 const byte address[6] = "sogod";
 
 struct Data_Package {
-  byte joystickControlStatus = 1;
-  byte buttonsControlStatus = 2;
-  byte switchControlStatus = 3;
+  byte joystickControlStatus = 0;
+  byte buttonsControlStatus = 0;
+  byte switchControlStatus = 0;
 };
 
 Data_Package data;
 
 void setup() {
+  Serial.begin(9600);
   Transmitter.begin();
   Transmitter.openWritingPipe(address);
   Transmitter.setPALevel(RF24_PA_MIN);
@@ -36,6 +37,9 @@ void loop() {
   data.joystickControlStatus = moveControl();
   data.buttonsControlStatus = buttonUDLR();
   data.switchControlStatus = digitalRead(SWITCH_PIN);
+  // Serial.println(data.joystickControlStatus);
+  // Serial.println(data.buttonsControlStatus);
+  // Serial.println(data.switchControlStatus);
   Transmitter.write(&data, sizeof(Data_Package));
 }
 
